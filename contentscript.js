@@ -33,13 +33,14 @@ async function getFilmID(title, year) {
   return result.items[0].id
 }
 
+
 //get film information from justwatch
 async function getFilm(id) {
   var film = await jw.getTitle('movie', id);
   return film;
 }
 
-//get film trailer
+//get film trailer from justwatch-api or parse it from letterboxd
 function getTrailer(film) {
   if (film.clips != null) {
     var trailerID = film.clips.filter(clip => clip.type == "trailer")[0].external_id;
@@ -47,11 +48,6 @@ function getTrailer(film) {
     var trailerID = $(".watch-panel").children("p").children("a").attr("href").substr(24,11);
   }
   return trailerProvider + trailerID;
-}
-
-//parse film trailer
-function getTrailerFromLetterboxd() {
-  return
 }
 
 //get all available providers from justwatch
@@ -62,7 +58,11 @@ async function getAllProviders() {
 
 //get providers that offer the film from justwatch
 function getFilmProviders(film) {
-  return film.offers.filter(provider => provider.monetization_type == "flatrate" && provider.presentation_type == "hd")
+  if (film.offers != null) {
+    return film.offers.filter(provider => provider.monetization_type == "flatrate");
+  } else {
+    return [];
+  }
 }
 
 //turn provider id from justwatch to provider name
@@ -90,8 +90,14 @@ function getProviderPanel(provider, url) {
 //get all available provider panels
 function createProviderPanels(providers) {
   var providerPanel = $("<section></section>").addClass("provider");
+  var ind = [];
+  var id = 0;
   for (var i = 0; i < providers.length; i++) {
-    $(providerPanel).append(getProviderPanel(IDtoProvider(providers[i].provider_id), providers[i].urls.standard_web));
+    id = providers[i].provider_id;
+    ind.push(id);
+    if (ind.indexOf(id) == i) {
+      $(providerPanel).append(getProviderPanel(IDtoProvider(id), providers[i].urls.standard_web));
+    }
   }
   return providerPanel;
 }
@@ -112,8 +118,9 @@ async function main() {
   allProviders = await getAllProviders();
   var trailer = getProviderPanel("Trailer", getTrailer(film))
   var streamProviders = createProviderPanels(getFilmProviders(film));
+  var streamPanel = createStreamPanel(trailer, streamProviders);
   $(".watch-panel").remove();
-  $(".poster-list").after(createStreamPanel(trailer, streamProviders));
+  $(".poster-list").after(streamPanel);
 }
 
 main();
