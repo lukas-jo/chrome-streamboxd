@@ -1,0 +1,18 @@
+{
+  "name": "Streamboxd",
+  "version": "1.0",
+  "author": "Lua",
+  "homepage_url": "http://github.com",
+  "description": "This extension shows on a Letterboxd film page where this film can be streamed",
+  "permissions": ["activeTab"],
+  "background": {
+    "scripts": ["lib/jquery.js", "lib/bundle.js"],
+    "persistent": false
+  },
+  "content_scripts": [{
+    "matches": ["https://letterboxd.com/film/*"],
+    "js": ["lib/jquery.js", "lib/bundle.js", "contentscript.js"],
+    "run_at": "document_end"
+  }],
+  "manifest_version": 2
+}
