@@ -18,9 +18,16 @@ function getFilmTitle() {
   return $("#featured-film-header").children("h1").text();
 }
 
+function getFilmYear() {
+  return $("#featured-film-header").children("p").children("small").children("a").text();
+}
+
 //get justwatch-id of the film
 async function getFilmID() {
-  var result = await jweng.search({query: getFilmTitle()});
+  var t0 = performance.now();
+  var result = await jweng.search({query: getFilmTitle(), cinema_release: getFilmYear()});
+  var t1 = performance.now();
+  console.log(result.items[0].title + ", " + result.items[0].original_release_year +  " zu finden hat " + (t1-t0) + "ms gedauert");
   return result.items[0].id
 }
 
