@@ -11,7 +11,7 @@ var trailerProvider = "https://www.invidio.us/watch?v=";
 
 //get user location
 function getLocale() {
-  return  'de_DE';//navigator.language.replace("-", "_");
+  return  navigator.language.replace("-", "_");
 }
 
 //parse film title from letterboxd page
