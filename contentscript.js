@@ -39,14 +39,16 @@ async function getFilmID(title, year) {
     var result = await jweng.search({query: title, cinema_release: year});
     var t1 = performance.now();
     if (result != null) {
-        console.log("Streamboxd: " + result.items[0].title + ", " + result.items[0].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
-        return result.items[0].id
-    } else {
-      return null;
+      var len = result.items.length > 3 ? 3 : result.items.length;
+      for (var i = 0; i < len; i++) {
+        if (result.items[i].title.replace(" ", "").replace(" ", "") == title.replace(" ", "").replace(" ", "") && result.items[i].original_release_year >= year-1 && result.items[i].original_release_year <= year+1) {
+          console.log("Streamboxd: " + result.items[i].title + ", " + result.items[i].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
+          return result.items[i].id
+        }
+      }
     }
-  } else {
-    return null;
   }
+  return null;
 }
 
 
@@ -116,7 +118,7 @@ function getProviderPanel(provider, url) {
 //get all available provider panels
 function createProviderPanels(trailer, providers) {
   var providerPanel = $("<section></section>").addClass("provider");
-  if (trailer != null && providers != null) {
+  if (trailer != null || providers.length > 0) {
     trailer != null && $(providerPanel).append(getProviderPanel("Trailer", trailer));
     var ind = [];
     var id = 0;
