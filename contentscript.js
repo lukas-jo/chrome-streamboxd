@@ -16,36 +16,69 @@ function getLocale() {
 
 //parse film title from letterboxd page
 function getFilmTitle() {
-  return $("#featured-film-header").children("h1").text();
+  if ($("#featured-film-header").children("h1") != null) {
+    return $("#featured-film-header").children("h1").text();
+  } else {
+    return null;
+  }
 }
 
 //parse film release year from letterboxd page
 function getFilmYear() {
-  return $("#featured-film-header").children("p").children("small").children("a").text();
+  if ($("#featured-film-header").children("p").children("small").children("a") != null) {
+    return $("#featured-film-header").children("p").children("small").children("a").text();
+  } else {
+    return null;
+  }
 }
 
 //get justwatch-id of the film
 async function getFilmID(title, year) {
-  var t0 = performance.now();
-  var result = await jweng.search({query: title, cinema_release: year});
-  var t1 = performance.now();
-  console.log("Streamboxd: " + result.items[0].title + ", " + result.items[0].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
-  return result.items[0].id
+  if (title != null && year != null) {
+    var t0 = performance.now();
+    var result = await jweng.search({query: title, cinema_release: year});
+    var t1 = performance.now();
+    if (result != null) {
+      var found = false;
+      for (var i = 0; i < result.total_results; i++) {
+        if (result.items[0].title == title && result.items[0].original_release_year > year-1 && result.items[0].original_release_year < year+1) {
+          var found = true;
+          break;
+        }
+      }
+      if (found) {
+        console.log("Streamboxd: " + result.items[0].title + ", " + result.items[0].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
+        return result.items[0].id
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  } else {
+    return null;
+  }
 }
 
 
 //get film information from justwatch
 async function getFilm(id) {
-  var film = await jw.getTitle('movie', id);
-  return film;
+  if (id != null) {
+    var film = await jw.getTitle('movie', id);
+    return film;
+  } else {
+    return null;
+  }
 }
 
 //get film trailer from justwatch-api or parse it from letterboxd
 function getTrailer(film) {
-  if (film.clips != null) {
+  if (film != null && film.clips != null) {
     var trailerID = film.clips.filter(clip => clip.type == "trailer")[0].external_id;
-  } else {
+  } else if ($(".watch-panel").children("p").children("a").attr("href") != null) {
     var trailerID = $(".watch-panel").children("p").children("a").attr("href").substr(24,11);
+  } else {
+    return null;
   }
   return trailerProvider + trailerID;
 }
@@ -53,12 +86,16 @@ function getTrailer(film) {
 //get all available providers from justwatch
 async function getAllProviders() {
   var providers = await jw.getProviders();
-  return providers.filter(provider => provider.monetization_types.includes("flatrate"));
+  if (providers != null) {
+    return providers.filter(provider => provider.monetization_types.includes("flatrate"));
+  } else {
+    return [];
+  }
 }
 
 //get providers that offer the film from justwatch
 function getFilmProviders(film) {
-  if (film.offers != null) {
+  if (film != null && film.offers != null) {
     return film.offers.filter(provider => provider.monetization_type == "flatrate");
   } else {
     return [];
@@ -88,25 +125,30 @@ function getProviderPanel(provider, url) {
 }
 
 //get all available provider panels
-function createProviderPanels(providers) {
+function createProviderPanels(trailer, providers) {
   var providerPanel = $("<section></section>").addClass("provider");
-  var ind = [];
-  var id = 0;
-  for (var i = 0; i < providers.length; i++) {
-    id = providers[i].provider_id;
-    ind.push(id);
-    if (ind.indexOf(id) == i) {
-      $(providerPanel).append(getProviderPanel(IDtoProvider(id), providers[i].urls.standard_web));
+  if (trailer != null && providers != null) {
+    trailer != null && $(providerPanel).append(getProviderPanel("Trailer", trailer));
+    var ind = [];
+    var id = 0;
+    for (var i = 0; i < providers.length; i++) {
+      id = providers[i].provider_id;
+      ind.push(id);
+      if (ind.indexOf(id) == i) {
+        $(providerPanel).append(getProviderPanel(IDtoProvider(id), providers[i].urls.standard_web));
+      }
     }
+    return providerPanel;
+  } else {
+    throw "nothing found";
   }
-  return providerPanel;
 }
 
 //display panel
-function createStreamPanel(trailer, provider) {
+function createStreamPanel(provider) {
   var streamPanel = $("<section></section>").attr('id', 'stream-panel').addClass("watch-panel");
   var title = $("<h3></h3>").addClass("title").text("Watch");
-  return streamPanel.append(title).append(trailer).append(provider);
+  return streamPanel.append(title).append(provider);
 }
 
 /*
@@ -116,11 +158,9 @@ main
 async function main() {
   var film = await getFilm(await getFilmID(getFilmTitle(), getFilmYear()));
   allProviders = await getAllProviders();
-  var trailer = getProviderPanel("Trailer", getTrailer(film))
-  var streamProviders = createProviderPanels(getFilmProviders(film));
-  var streamPanel = createStreamPanel(trailer, streamProviders);
-  $(".watch-panel").remove();
-  $(".poster-list").after(streamPanel);
+  var streamProviders = createProviderPanels(getTrailer(film), getFilmProviders(film));
+  var streamPanel = createStreamPanel(streamProviders);
+  $(".watch-panel").replaceWith(streamPanel);
 }
 
 main();
