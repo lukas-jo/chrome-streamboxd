@@ -11,7 +11,7 @@ var trailerProvider = "https://www.invidio.us/watch?v=";
 
 //get user location
 function getLocale() {
-  return  navigator.language.replace("-", "_");
+  return navigator.language.replace("-", "_");
 }
 
 //parse film title from letterboxd page
@@ -41,7 +41,8 @@ async function getFilmID(title, year) {
     if (result != null) {
       var len = result.items.length > 3 ? 3 : result.items.length;
       for (var i = 0; i < len; i++) {
-        if (result.items[i].title.replace(" ", "").replace(" ", "") == title.replace(" ", "").replace(" ", "") && result.items[i].original_release_year >= year-1 && result.items[i].original_release_year <= year+1) {
+        //need better way to compare titles
+        if (result.items[i].original_release_year >= year-1 && result.items[i].original_release_year <= year+1) {
           console.log("Streamboxd: " + result.items[i].title + ", " + result.items[i].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
           return result.items[i].id
         }

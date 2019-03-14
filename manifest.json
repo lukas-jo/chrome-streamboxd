@@ -1,6 +1,6 @@
 {
   "name": "Streamboxd",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "author": "Lua",
   "homepage_url": "https://github.com/sourcelua/chrome-streamboxd",
   "description": "This extension shows on a Letterboxd film page where this film can be streamed",
