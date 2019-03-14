@@ -39,19 +39,8 @@ async function getFilmID(title, year) {
     var result = await jweng.search({query: title, cinema_release: year});
     var t1 = performance.now();
     if (result != null) {
-      var found = false;
-      for (var i = 0; i < result.total_results; i++) {
-        if (result.items[0].title == title && result.items[0].original_release_year > year-1 && result.items[0].original_release_year < year+1) {
-          var found = true;
-          break;
-        }
-      }
-      if (found) {
         console.log("Streamboxd: " + result.items[0].title + ", " + result.items[0].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
         return result.items[0].id
-      } else {
-        return null;
-      }
     } else {
       return null;
     }
