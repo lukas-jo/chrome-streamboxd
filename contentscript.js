@@ -4,60 +4,69 @@ const JustWatch = require('justwatch-api');
 background
 */
 
-var jw = new JustWatch({locale: getLocale()});
-var jweng = new JustWatch({locale: 'en_US'});
+var jw;
+var jweng = new JustWatch({
+  locale: 'en_US'
+});
 var allProviders;
 var trailerProvider = "https://www.invidio.us/watch?v=";
 
+chrome.storage.onChanged.addListener(function(changes, namespace) {
+  main();
+});
+
 //get user location
-function getLocale() {
-  return navigator.language.replace("-", "_");
+function setLocale() {
+  chrome.storage.local.get(['options'], function(result) {
+    var pattloc = /[a-z][a-z]_[A-Z][A-Z]/;
+    var loc = navigator.language.replace("-", "_");
+    var opt = JSON.parse(result.options);
+    var resloc = opt.locale;
+    if (resloc != null && pattloc.test(resloc)) {
+      loc = resloc;
+    }
+    jw = new JustWatch({
+      locale: loc
+    });
+  });
 }
 
 //parse film title from letterboxd page
 function getFilmTitle() {
-  if ($("#featured-film-header").children("h1") != null) {
+  try {
     return $("#featured-film-header").children("h1").text();
-  } else {
+  } catch (err) {
+    console.log("No Film Title");
     return null;
   }
 }
 
-//parse film release year from letterboxd page
-function getFilmYear() {
-  if ($("#featured-film-header").children("p").children("small").children("a") != null) {
-    return $("#featured-film-header").children("p").children("small").children("a").text();
-  } else {
-    return null;
-  }
+//parse tMDB ID from letterboxd page
+function getTmdbId() {
+  return parseInt($("body").attr("data-tmdb-id"));
 }
 
 //get justwatch-id of the film
-async function getFilmID(title, year) {
-  if (title != null && year != null) {
-    var t0 = performance.now();
-    var result = await jweng.search({query: title, cinema_release: year});
-    var t1 = performance.now();
-    if (result != null) {
-      var len = result.items.length > 3 ? 3 : result.items.length;
-      for (var i = 0; i < len; i++) {
-        //need better way to compare titles
-        if (result.items[i].original_release_year >= year-1 && result.items[i].original_release_year <= year+1) {
-          console.log("Streamboxd: " + result.items[i].title + ", " + result.items[i].original_release_year +  " zu finden hat " + Math.round(t1-t0) + "ms gedauert");
-          return result.items[i].id
-        }
-      }
-    }
+async function getFilmID(title) {
+  try {
+    var result = await jweng.search({
+      query: title
+    });
+    return result.items.find(function(film) {
+      return film.scoring.find(function(item) {
+        return item.provider_type == "tmdb:id";
+      }).value == getTmdbId()
+    }).id;
+  } catch {
+    console.log("Film not found");
+    return null;
   }
-  return null;
 }
-
 
 //get film information from justwatch
 async function getFilm(id) {
   if (id != null) {
-    var film = await jw.getTitle('movie', id);
-    return film;
+    return await jw.getTitle('movie', id);
   } else {
     return null;
   }
@@ -68,7 +77,7 @@ function getTrailer(film) {
   if (film != null && film.clips != null) {
     var trailerID = film.clips.filter(clip => clip.type == "trailer")[0].external_id;
   } else if ($(".watch-panel").children("p").children("a").attr("href") != null) {
-    var trailerID = $(".watch-panel").children("p").children("a").attr("href").substr(24,11);
+    var trailerID = $(".watch-panel").children("p").children("a").attr("href").substr(24, 11);
   } else {
     return null;
   }
@@ -96,12 +105,9 @@ function getFilmProviders(film) {
 
 //turn provider id from justwatch to provider name
 function IDtoProvider(id) {
-  for (var i = 0; i < allProviders.length; i++) {
-    if (allProviders[i].id == id) {
-      return allProviders[i].clear_name;
-    }
-  }
-  return "Unbekannt";
+  return allProviders.find(function(provider) {
+    return provider.id == id;
+  }).clear_name;
 }
 
 /*
@@ -148,7 +154,8 @@ main
 */
 
 async function main() {
-  var film = await getFilm(await getFilmID(getFilmTitle(), getFilmYear()));
+  setLocale();
+  var film = await getFilm(await getFilmID(getFilmTitle()));
   allProviders = await getAllProviders();
   var streamProviders = createProviderPanels(getTrailer(film), getFilmProviders(film));
   var streamPanel = createStreamPanel(streamProviders);
