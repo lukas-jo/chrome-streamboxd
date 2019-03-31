@@ -15,6 +15,6 @@ While Letterboxd already shows where a film can be streamed, this only counts fo
  4. Done
 
 
-## Test
+### External services used
 
 This Extension uses the node package [justwatch-api](https://github.com/lufinkey/node-justwatch-api) which is a wrapper for the API of justwatch.com. [Browserify](http://browserify.org/) was used to allow the node package to be used in the browser.
