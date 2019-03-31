@@ -7,8 +7,6 @@ This chrome extension shows on a Letterboxd film page where this film can be str
 
 While Letterboxd already shows where a film can be streamed, this only counts for the USA. This extension allows everyone to see where a film can be streamed in their respective country.
 
-![](https://image.prntscr.com/image/zW7PKzOlQ8et-FXENm3JJA.png =450x)
-
 ## Install
 
  1. Clone this repository or download the zip & unpack it
