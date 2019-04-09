@@ -10,7 +10,7 @@ While Letterboxd already shows where a film can be streamed, this only counts fo
 ## Install
 
  1. Clone this repository or download the zip & unpack it
- 2. go to [chrome://extensions](chrome://extensions) and enable Developer Mode
+ 2. go to chrome://extensions and enable Developer Mode
  3. Click 'Load Unpacked' and select the chrome-streamboxd folder
  4. Done
 

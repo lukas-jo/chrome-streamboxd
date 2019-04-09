@@ -5,17 +5,8 @@ globals ... meh
 */
 
 var jw;
-var jweng = new JustWatch({
-  locale: 'en_US'
-});
-
-var options;
+const engine = new JustWatch({locale: 'en_US'});
 var allProviders;
-var trailerProvider = "https://www.invidio.us/watch?v=";
-
-chrome.storage.onChanged.addListener(function(changes, namespace) {
-  main();
-});
 
 /*
 parse html
@@ -40,9 +31,11 @@ function getLBTrailerId() {
 background & helper
 */
 
-async function getOptions() {
-  var opt = await chrome.storage.local.get(['options'])
-  return JSON.parse(opt.options);
+//ser Listener for Chrome Storage API
+function setStorageListener() {
+  chrome.storage.onChanged.addListener(function(changes, namespace) {
+    location.reload();
+  });
 }
 
 //check if a String is a locale
@@ -98,9 +91,7 @@ justwatch
 //get justwatch-id of the film
 async function getFilmID(title) {
   try {
-    var result = await jweng.search({
-      query: title
-    });
+    var result = await engine.search({query: title});
     return findFilm(result.items).id;
   } catch (err) {
     console.log("Could not find film with title " + title);
@@ -121,10 +112,10 @@ async function getFilm(id = 0) {
 //get film trailer from justwatch-api or parse it from letterboxd
 function getTrailer(film) {
   if (film != null && film.clips != null) {
-    return trailerProvider + getJWTrailerId(film.clips);
+    return options.trailerProvider + getJWTrailerId(film.clips);
   }
   try {
-    return trailerProvider + getLBTrailerId()
+    return options.trailerProvider + getLBTrailerId()
   } catch (err) {
     console.log("No trailer could be found");
     return null;
@@ -175,12 +166,10 @@ main
 */
 
 async function main() {
-  options = await getOptions();
-  jw = new JustWatch({
-    locale: getLocale()
-  });
-  var film = await getFilm(await getFilmID(getFilmTitle()));
+  setStorageListener();
+  jw = new JustWatch({locale: getLocale()});
   allProviders = await jw.getProviders();
+  var film = await getFilm(await getFilmID(getFilmTitle()));
   var streamProviders = createProviderPanels(getTrailer(film), getFilmProviders(film));
   var streamPanel = createStreamPanel(streamProviders);
   $(".watch-panel").replaceWith(streamPanel);
