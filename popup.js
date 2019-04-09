@@ -1,4 +1,5 @@
-function loadOptions() {
+async function loadOptions() {
+  options = await getOptions();
   options.languages.forEach((l) => {
     $("#countrySelect").append($('<option/>').attr({
       'value': l.locale
@@ -9,14 +10,11 @@ function loadOptions() {
       'value': t.url
     }).text(t.provider));
   });
-  chrome.storage.local.get(['options'], function(result) {
-    opt = JSON.parse(result.options);
-    $("#countrySelect").val(opt.locale);
-	$("#trailerSelect").val(opt.trailerProvider);
-    //$("#showStream").prop('checked', opt.showStream);
-    //$("#showBuy").prop('checked', opt.showBuy);
-    //$("#showRent").prop('checked', opt.showRent);
-  });
+  $("#countrySelect").val(options.locale);
+  $("#trailerSelect").val(options.trailerProvider);
+  //$("#showStream").prop('checked', options.showStream);
+  //$("#showBuy").prop('checked', options.showBuy);
+  //$("#showRent").prop('checked', options.showRent);
 }
 
 $("#saveOptions").click(function() {

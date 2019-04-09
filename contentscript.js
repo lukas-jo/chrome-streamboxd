@@ -1,11 +1,10 @@
-const JustWatch = require('justwatch-api');
-
 /*
 globals ... meh
 */
 
-var jw;
+const JustWatch = require('justwatch-api');
 const engine = new JustWatch({locale: 'en_US'});
+var jw;
 var allProviders;
 
 /*
@@ -157,7 +156,6 @@ function createProviderPanels(trailer, providers) {
 function createStreamPanel(provider) {
   var streamPanel = $("<section></section>").attr('id', 'stream-panel').addClass("watch-panel");
   var title = $("<h3></h3>").addClass("title").text("Watch");
-  streamPanel.append($(".watch-panel").children("p").attr("hidden", "true"));
   return streamPanel.append(title).append(provider);
 }
 
@@ -166,6 +164,7 @@ main
 */
 
 async function main() {
+  options = await getOptions();
   setStorageListener();
   jw = new JustWatch({locale: getLocale()});
   allProviders = await jw.getProviders();
@@ -173,7 +172,7 @@ async function main() {
   var streamProviders = createProviderPanels(getTrailer(film), getFilmProviders(film));
   var streamPanel = createStreamPanel(streamProviders);
   $(".watch-panel").replaceWith(streamPanel);
-  $("#div-gpt-ad-1529350096921-1").remove(); //remove ad
 }
 
+console.log(options);
 main();
