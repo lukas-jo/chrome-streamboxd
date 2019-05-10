@@ -1,17 +1,20 @@
 {
   "name": "Streamboxd",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Lua",
   "homepage_url": "https://github.com/sourcelua/chrome-streamboxd",
   "description": "This extension shows on a Letterboxd film page where a film can be streamed",
   "permissions": ["activeTab", "storage"],
   "browser_action": {
-      "default_popup": "popup.html"
-    },
+    "default_popup": "popup.html"
+  },
   "content_scripts": [{
     "matches": ["https://letterboxd.com/film/*"],
     "js": ["lib/jquery.js", "lib/bundle.js", "lib/chrome-extension-async.js", "lib/options.js", "contentscript.js"],
     "run_at": "document_end"
   }],
+  "web_accessible_resources": [
+    "lib/options.json"
+  ],
   "manifest_version": 2
 }

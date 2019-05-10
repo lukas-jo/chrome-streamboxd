@@ -1,11 +1,6 @@
-/*
-globals ... meh
-*/
-
 const JustWatch = require('justwatch-api');
 const engine = new JustWatch({locale: 'en_US'});
-var jw;
-var allProviders;
+let jw, allProviders;
 
 /*
 parse html
@@ -30,7 +25,7 @@ function getLBTrailerId() {
 background & helper
 */
 
-//ser Listener for Chrome Storage API
+//set Listener for Chrome Storage API
 function setStorageListener() {
   chrome.storage.onChanged.addListener(function(changes, namespace) {
     location.reload();
@@ -87,14 +82,14 @@ function IDtoProvider(id = 0) {
 justwatch
 */
 
-//get justwatch-id of the film
-async function getFilmID(title) {
+//search on justwatch for a film
+async function getFilmOV(title) {
   try {
-    var result = await engine.search({query: title});
-    return findFilm(result.items).id;
+    let result = await engine.search({query: title});
+    return findFilm(result.items);
   } catch (err) {
     console.log("Could not find film with title " + title);
-    return null;
+    return {};
   }
 }
 
@@ -104,14 +99,14 @@ async function getFilm(id = 0) {
     return await jw.getTitle('movie', id);
   } catch (err) {
     console.log(id + " is not a valid ID")
-    return null;
+    return {};
   }
 }
 
 //get film trailer from justwatch-api or parse it from letterboxd
-function getTrailer(film) {
-  if (film != null && film.clips != null) {
-    return options.trailerProvider + getJWTrailerId(film.clips);
+function getTrailer({clips}) {
+  if (clips != null) {
+    return options.trailerProvider + getJWTrailerId(clips);
   }
   try {
     return options.trailerProvider + getLBTrailerId()
@@ -122,9 +117,9 @@ function getTrailer(film) {
 }
 
 //get providers that offer the film from justwatch
-function getFilmProviders(film) {
-  if (film != null && film.offers != null) {
-    return film.offers.filter(
+function getFilmProviders({offers}) {
+  if (offers != null) {
+    return offers.filter(
       provider => provider.monetization_type === "flatrate"
     );
   } else {
@@ -137,26 +132,23 @@ create html
 */
 
 //create a provider panel
-function getProviderPanel(provider, url) {
-  var i = $("<span></span>").addClass("icon -play");
-  var s = $("<span></span>").addClass("name").text(provider);
-  var a = $("<a></a>").attr("href", url).addClass("label").append(i).append(s);
+function getProviderLabel(provider, url) {
+  let i = $("<span></span>").addClass("icon -play");
+  let s = $("<span></span>").addClass("name").text(provider);
+  let a = $("<a></a>").attr("href", url).addClass("label").append(i).append(s);
   return $("<p></p>").append(a);
 }
 
-//get all available provider panels
-function createProviderPanels(trailer, providers) {
-  var providerPanel = $("<section></section>").addClass("provider");
-  trailer != null && $(providerPanel).append(getProviderPanel("Trailer", trailer));
-  uniqueProviders(providers).forEach(p => $(providerPanel).append(getProviderPanel(IDtoProvider(p.provider_id), p.urls.standard_web)));
-  return providerPanel;
-}
-
 //display panel
-function createStreamPanel(provider) {
-  var streamPanel = $("<section></section>").attr('id', 'stream-panel').addClass("watch-panel");
-  var title = $("<h3></h3>").addClass("title").text("Watch");
-  return streamPanel.append(title).append(provider);
+function createStreamPanel(trailer, providers) {
+  let providerPanel = $("<section></section>").addClass("provider");
+  trailer != null && $(providerPanel).append(getProviderLabel("Trailer", trailer));
+  uniqueProviders(providers).forEach(
+    p => $(providerPanel).append(getProviderLabel(IDtoProvider(p.provider_id), p.urls.standard_web))
+  );
+  let streamPanel = $("<section></section>").attr('id', 'stream-panel').addClass("watch-panel");
+  let title = $("<h3></h3>").addClass("title").text("Watch");
+  return streamPanel.append(title).append(providerPanel);
 }
 
 /*
@@ -164,15 +156,15 @@ main
 */
 
 async function main() {
-  options = await getOptions();
   setStorageListener();
+  options = await getOptions();
   jw = new JustWatch({locale: getLocale()});
   allProviders = await jw.getProviders();
-  var film = await getFilm(await getFilmID(getFilmTitle()));
-  var streamProviders = createProviderPanels(getTrailer(film), getFilmProviders(film));
-  var streamPanel = createStreamPanel(streamProviders);
+  let filmOV = await getFilmOV(getFilmTitle());
+  let film = await getFilm(filmOV.id);
+  let trailer = getTrailer(options.trailerOV ? filmOV : film);
+  let streamPanel = createStreamPanel(trailer, getFilmProviders(film));
   $(".watch-panel").replaceWith(streamPanel);
 }
 
-console.log(options);
 main();
