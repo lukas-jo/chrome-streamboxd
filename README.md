@@ -14,6 +14,9 @@ While Letterboxd already shows where a film can be streamed, this only counts fo
  3. Click 'Load Unpacked' and select the chrome-streamboxd folder
  4. Done
 
+## Todo
+ - remove jquery dependency
+ - add support for firefox
 
 ### External services used
 
