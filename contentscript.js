@@ -16,7 +16,7 @@ function getLBTmdbId() {
 
 //parse Traile ID from letterboxd page
 function getLBTrailerId() {
-  return document.querySelector(".watch-panel").children[1].firstElementChild.href.substr(24, 11);
+  return document.querySelector(".watch-panel").children[1].firstElementChild.href.substr(30, 11);
 }
 
 /*
