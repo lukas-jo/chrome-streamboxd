@@ -1,4 +1,4 @@
-let allProviders;
+let allProviders, options;
 
 /*
 parse html
@@ -51,7 +51,7 @@ function getJWTmdbId(scoring = []) {
   return scoring.find(item => item.provider_type === "tmdb:id").value;
 }
 
-//find a film in a list of film from justwatch
+//find a film in a list of films from justwatch
 function findFilm(films = []) {
   return films.find(film => getJWTmdbId(film.scoring) === getLBTmdbId());
 }
@@ -80,23 +80,13 @@ function IDtoProvider(id = 0) {
 justwatch
 */
 
-function jsonToQuery(data) {
-  return Object.entries(data).map(a => a[0] + '=' + a[1]).join('&');
-}
-
-function request(method, endpoint, data) {
+function request(method, endpoint, data = null) {
   return new Promise(function(resolve, reject) {
     let xhr = new XMLHttpRequest();
-    let body = null, queryString = '';
-    if (method === 'GET' && data != null && data.constructor === Object && Object.entries(data).length === 0) {
-      queryString = '?' + jsonToQuery(data)
-    } else {
-      body = JSON.stringify(data);
-    }
-    xhr.open(method, 'https://cors-anywhere.herokuapp.com/apis.justwatch.com/content' + endpoint + queryString);
+    xhr.open(method, 'https://cors-anywhere.herokuapp.com/apis.justwatch.com/content' + endpoint);
     xhr.onload = function() {
       if (this.status >= 200 && this.status < 300) {
-        resolve(xhr.response);
+        resolve(JSON.parse(xhr.responseText));
       } else {
         reject({
           status: this.status,
@@ -110,27 +100,36 @@ function request(method, endpoint, data) {
         statusText: xhr.statusText
       });
     };
-    xhr.send(body);
+    xhr.send(JSON.stringify(data));
   });
 }
 
+//get all Providers from justwatch
 async function getProviders() {
-  const res = await request("GET", `/providers/locale/${getLocale()}`, null);
-  return JSON.parse(res);
+  return await request("GET", `/providers/locale/${getLocale()}`);
 }
 
 //search on justwatch for a film
 async function searchTitle(title) {
-  const res = await request("POST", '/titles/en_US/popular', {
-    query: title
-  });
-  return findFilm(JSON.parse(res).items);
+  try {
+    const res = await request("POST", '/titles/en_US/popular', {
+      query: title
+    });
+    return findFilm(res.items);
+  } catch {
+    console.log("Could not find film with title " + title);
+    return {};
+  }
 }
 
 //get film information from justwatch
 async function getFilm(id = 0) {
-  const res = await request("GET", `/titles/movie/${id}/locale/${getLocale()}`, null);
-  return JSON.parse(res);
+  try {
+    return await request("GET", `/titles/movie/${id}/locale/${getLocale()}`);
+  } catch {
+    console.log(id + " is not a valid ID");
+    return {};
+  }
 }
 
 //get film trailer from justwatch-api or parse it from letterboxd
@@ -163,22 +162,21 @@ create html
 
 //create a provider panel
 function getProviderLabel(provider, url) {
-  let i = $("<span></span>").addClass("icon -play");
-  let s = $("<span></span>").addClass("name").text(provider);
-  let a = $("<a></a>").attr("href", url).addClass("label").append(i).append(s);
-  return $("<p></p>").append(a);
+  return `<p>
+            <a href="${url}" class="label">
+              <span class="icon -play"></span>
+              <span class="name">${provider}</span>
+            </a>
+          </p>`
 }
 
 //display panel
 function createStreamPanel(trailer, providers) {
-  let providerPanel = $("<section></section>").addClass("provider");
-  trailer != null && $(providerPanel).append(getProviderLabel("Trailer", trailer));
-  uniqueProviders(providers).forEach(
-    p => $(providerPanel).append(getProviderLabel(IDtoProvider(p.provider_id), p.urls.standard_web))
-  );
-  let streamPanel = $("<section></section>").attr('id', 'stream-panel').addClass("watch-panel");
-  let title = $("<h3></h3>").addClass("title").text("Watch");
-  return streamPanel.append(title).append(providerPanel);
+  return `<h3 class="title">Watch</h3>
+          <section>
+            ${trailer != null ? getProviderLabel("Trailer", trailer) : ''}
+            ${uniqueProviders(providers).map(p => getProviderLabel(IDtoProvider(p.provider_id), p.urls.standard_web)).join('')}
+          </section>`
 }
 
 /*
@@ -193,7 +191,7 @@ async function main() {
   let film = await getFilm(filmOV.id);
   let trailer = getTrailer(options.trailerOV ? filmOV : film);
   let streamPanel = createStreamPanel(trailer, getFilmProviders(film));
-  $(".watch-panel").replaceWith(streamPanel);
+  document.querySelector(".watch-panel").innerHTML = streamPanel;
 }
 
 main();

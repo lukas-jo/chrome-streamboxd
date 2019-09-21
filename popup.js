@@ -1,40 +1,38 @@
 async function loadOptions() {
-  $.ajax({
-    url: "lib/options.json",
-    dataType: 'json',
-    async: false,
-    success: function(data) {
-      data.languages.forEach((l) => {
-        $("#countrySelect").append($('<option/>').attr({
-          'value': l.locale
-        }).text(l.country));
+  let xhr = new XMLHttpRequest();
+  xhr.open('GET', 'lib/options.json');
+  xhr.onload = async function() {
+    if (this.status >= 200 && this.status < 300) {
+      const res = JSON.parse(xhr.responseText);
+      res.languages.forEach((l) => {
+        document.querySelector("#countrySelect").innerHTML += `<option value=${l.locale}>${l.country}</option>`;
       });
-      data.trailerProviders.forEach((t) => {
-        $("#trailerSelect").append($('<option/>').attr({
-          'value': t.url
-        }).text(t.provider));
-    })
+      res.trailerProviders.forEach((t) => {
+        document.querySelector("#trailerSelect").innerHTML += `<option value=${t.url}>${t.provider}</option>`;
+      });
+      let options = await getOptions();
+      document.querySelector("#countrySelect").value = options.locale;
+      document.querySelector("#trailerSelect").value = options.trailerProvider;
+      document.querySelector("#trailerOV").checked = options.trailerOV;
+      //document.querySelector("#showStream").checked' = options.showStream;
+      //document.querySelector("#showBuy").checked' = options.showBuy;
+      //document.querySelector("#showRent").checked' = options.showRent;
     }
-  });
-  options = await getOptions();
-  $("#countrySelect").val(options.locale);
-  $("#trailerSelect").val(options.trailerProvider);
-  $("#trailerOV").prop('checked', options.trailerOV);
-  //$("#showStream").prop('checked', options.showStream);
-  //$("#showBuy").prop('checked', options.showBuy);
-  //$("#showRent").prop('checked', options.showRent);
+  }
+  xhr.send();
 }
 
-$("#saveOptions").click(function() {
-  options.locale = $("#countrySelect").val();
-  options.trailerProvider = $("#trailerSelect").val();
-  options.trailerOV = $("#trailerOV").is(':checked');
-  /*
-  options.showStream = $("#showStream").is(':checked');
-  options.showBuy = $("#showBuy").is(':checked');
-  options.showRent = $("#showRent").is(':checked');
-  */
-  saveChanges();
-});
+document.querySelector("#saveOptions").onclick = function() {
+  chrome.storage.sync.set({
+    'options': JSON.stringify({
+      locale: document.querySelector("#countrySelect").value,
+      trailerProvider: document.querySelector("#trailerSelect").value,
+      trailerOV: document.querySelector("#trailerOV").checked//,
+      //options.showStream = document.querySelector("#showStream").checked,
+      //options.showBuy = document.querySelector("#showBuy").checked,
+      //options.showRent = document.querySelector("#showRent").checked})
+    })
+  });
+}
 
 loadOptions();
